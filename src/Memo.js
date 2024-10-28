@@ -6,9 +6,33 @@ function Memo(props) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(props.title);
   const [editorState, setEditorState] = useState(() => {
-    return props.content 
-      ? EditorState.createWithContent(convertFromRaw(JSON.parse(props.content))) 
-      : EditorState.createEmpty();
+    const isJSON = (str) => {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+
+    let initialContent = null;
+    if (isJSON(props.content)) {
+      initialContent = convertFromRaw(JSON.parse(props.content));
+    } else {
+      // Correct the initialContent creation for plain text:
+      const contentState = convertFromRaw({
+        blocks: [{
+          key: 'initial',
+          text: props.content,
+          type: 'unstyled',
+        }],
+        entityMap: {},
+      });
+
+      initialContent = contentState;
+    }
+
+    return EditorState.createWithContent(initialContent);
   });
 
   const handleEditClick = () => {
@@ -39,7 +63,7 @@ function Memo(props) {
         <div className="memo-editor">
           <Editor 
             editorState={editorState}
-            onEditorStateChange={setEditorState}
+            onChange={setEditorState}
           />
         </div>
         <button onClick={handleSaveClick}>Save</button>
